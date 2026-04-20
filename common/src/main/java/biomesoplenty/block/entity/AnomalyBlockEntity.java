@@ -19,7 +19,8 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -29,9 +30,12 @@ public class AnomalyBlockEntity extends BlockEntity
     private long lastTime = -1;
     private BlockState lastState = null;
 
-    private final Supplier<LinkedHashSet<BlockState>> renderStates = Suppliers.memoize(() -> {
+    private final Supplier<List<BlockState>> renderStates = Suppliers.memoize(() -> {
         Registry<Block> blockRegistry = level.registryAccess().registryOrThrow(Registries.BLOCK);
-        return blockRegistry.entrySet().stream().map(e -> e.getValue().defaultBlockState()).filter(state -> state.getRenderShape() == RenderShape.MODEL).collect(Collectors.toCollection(LinkedHashSet::new));
+        return blockRegistry.entrySet().stream()
+            .map(e -> e.getValue().defaultBlockState())
+            .filter(state -> state.getRenderShape() == RenderShape.MODEL)
+            .collect(Collectors.toCollection(ArrayList::new));
     });
 
     public AnomalyBlockEntity(BlockPos pos, BlockState state) {
@@ -69,7 +73,8 @@ public class AnomalyBlockEntity extends BlockEntity
         }
 
         index = Mth.positiveModulo(index, renderStates.size()); // For some bizarre reason some people have a negative time?
-        BlockState renderState = renderStates.stream().skip(index).findFirst().orElseThrow();
+        // Use direct list access instead of stream.skip() for O(1) performance
+        BlockState renderState = renderStates.get(index);
 
         lastState = renderState;
         lastTime = time;

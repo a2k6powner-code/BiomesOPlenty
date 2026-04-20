@@ -160,19 +160,35 @@ public class ModFluidTypes
 
     public static void registerFluidInteractions()
     {
+        // Cache fluid type instances to avoid repeated .get() calls
+        final FluidType bloodType = BLOOD_TYPE.get();
+        final FluidType liquidNullType = LIQUID_NULL_TYPE.get();
+        final FluidType emptyType = ForgeMod.EMPTY_TYPE.get();
+        
         for (Map.Entry<ResourceKey<FluidType>, FluidType> fluidType : ForgeRegistries.FLUID_TYPES.get().getEntries())
         {
-            if (fluidType.getValue() != ForgeMod.EMPTY_TYPE.get() && fluidType.getValue() != ModFluidTypes.BLOOD_TYPE.get())
+            FluidType currentFluid = fluidType.getValue();
+            
+            // Skip empty type and self-interaction checks
+            if (currentFluid == emptyType)
             {
-                FluidInteractionRegistry.addInteraction(fluidType.getValue(), new FluidInteractionRegistry.InteractionInformation(
-                        ModFluidTypes.BLOOD_TYPE.get(),
+                continue;
+            }
+            
+            // Register blood interaction (skip self-interaction)
+            if (currentFluid != bloodType)
+            {
+                FluidInteractionRegistry.addInteraction(currentFluid, new FluidInteractionRegistry.InteractionInformation(
+                        bloodType,
                         fluidState -> fluidState.isSource() ? BOPBlocks.FLESH.defaultBlockState() : BOPBlocks.POROUS_FLESH.defaultBlockState()
                 ));
             }
-            if (fluidType.getValue() != ForgeMod.EMPTY_TYPE.get() && fluidType.getValue() != ModFluidTypes.LIQUID_NULL_TYPE.get())
+            
+            // Register liquid null interaction (skip self-interaction)
+            if (currentFluid != liquidNullType)
             {
-                FluidInteractionRegistry.addInteraction(fluidType.getValue(), new FluidInteractionRegistry.InteractionInformation(
-                        ModFluidTypes.LIQUID_NULL_TYPE.get(), BOPBlocks.NULL_BLOCK.defaultBlockState()));
+                FluidInteractionRegistry.addInteraction(currentFluid, new FluidInteractionRegistry.InteractionInformation(
+                        liquidNullType, BOPBlocks.NULL_BLOCK.defaultBlockState()));
             }
         }
     }
